@@ -12,6 +12,7 @@ static void clean_board(MinesweeperBoard *board) {
             board->grid[row][col].hasMine = false;
             board->grid[row][col].hasFlag = false;
             board->grid[row][col].isRevealed = false;
+            board->grid[row][col].mines = 0;
         }
     }
 }
@@ -35,7 +36,7 @@ static void place_mines(MinesweeperBoard *board, int mines_count) {
     }
 }
 
-void init_board(Game_mode game_mode, MinesweeperBoard *board) {
+static void init_board(MinesweeperBoard *board, Game_mode game_mode) {
     
     int mines_count;
     switch (game_mode)
@@ -74,25 +75,104 @@ void init_board(Game_mode game_mode, MinesweeperBoard *board) {
     place_mines(board, mines_count);
 }
 
+
+void init_game(MinesweeperGame *game, Game_mode mode) {
+    game->state = RUNNING;
+    game->mode = mode;
+    init_board(&(game->board), mode);
+}
+
+
+/*** GAME PLAY ***/
+
+static int countMines(const MinesweeperBoard *board, const int row, const int col) {
+    int x, y;
+    int mines = 0;
+
+    if (row == 0) y = 0;
+    else y = row - 1;
+
+    while (y < board->height && y <= row + 1) {
+        if (col == 0) x = 0;
+        else x = col - 1;
+        while (x < board->width && x <= col + 1) {
+            if (board->grid[y][x].hasMine) mines++;
+            x++;
+        }
+        y++;
+    }
+
+    return mines;
+}
+
+void toggleFlag(MinesweeperGame *game, const int row, const int col) {
+    if (row < 0 || row >= game->board.height || col < 0 || col >= game->board.width) return;
+    game->board.grid[row][col].hasFlag = !(game->board.grid[row][col].hasFlag);
+}
+
+void revealField(MinesweeperGame* game, const int row, const int col) {
+    if (row < 0 || row >= game->board.height || col < 0 || col >= game->board.width) return;
+    if (game->board.grid[row][col].isRevealed || game->board.grid[row][col].hasFlag) return;
+    
+    game->board.grid[row][col].isRevealed = true;
+    if (game->board.grid[row][col].hasMine) game->state = FINISHED_LOSS;
+
+    game->board.grid[row][col].mines = countMines(&(game->board), row, col);
+
+    if (game->board.grid[row][col].mines == 0) {
+        int x, y;
+
+        if (row == 0) y = 0;
+        else y = row - 1;
+
+        while (y < game->board.height && y <= row + 1) {
+            if (col == 0) x = 0;
+            else x = col - 1;
+            while (x < game->board.width && x <= col + 1) {
+                if (!(game->board.grid[y][x].isRevealed)) revealField(game, y, x);
+                x++;
+            }
+            y++;
+        }
+    }
+}
+// if row or col is outside board - '#'
+// if the field is not revealed and has a flag - 'F'
+// if the field is not revealed and does not have a flag - '_;
+// if the field is revealed and has mine - 'x'
+// if the field is revealed and has 0 mines around - ' '
+// if the field is revealed and has some mines around - '1' ... '8'
+
+static char getFieldInfo(const MinesweeperBoard *board, const int row, const int col) {
+    if (row < 0 || row >= board->height || col < 0 || col >= board->width) return '#';
+
+    if (!(board->grid[row][col].isRevealed)) {
+        if (board->grid[row][col].hasFlag) return 'F';
+        else return '_';
+    }
+
+    if (board->grid[row][col].hasMine) return 'x';
+    if (board->grid[row][col].mines == 0) return ' ';
+
+    return board->grid[row][col].mines + '0';
+}
+
 /*** DISPLAY ***/
 
 void display_board(const MinesweeperBoard *board) {
-    printf("     ");
+    printf("   ");
     for (int col = 0; col < board->width; col++)  {
-        printf(" %3d ", col);
+        printf("%3d", col);
     }
     printf("\n");
 
     for (int row = 0; row < board->height; row++) {
-        printf(" %3d ", row);
+        printf("%3d", row);
         for (int col = 0; col < board->width; col++)  {
-            printf("[%c%c%c]",
-                board->grid[row][col].hasMine == false ? '.': 'M',
-                board->grid[row][col].hasFlag == false ? '.': 'F',
-                board->grid[row][col].isRevealed == false ? '.': 'R'
-            );
+            printf("[%c]", getFieldInfo(board, row, col));
         }
         printf("\n");
     }
 }
+
 

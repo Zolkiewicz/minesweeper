@@ -22,6 +22,7 @@ typedef struct {
     bool hasMine;
     bool hasFlag;
     bool isRevealed;
+    int mines;
 } Field;
 
 typedef struct {
@@ -37,9 +38,23 @@ typedef enum {
     DEBUG
 } Game_mode;
 
-void init_board(Game_mode game_mode, MinesweeperBoard *board);
+typedef enum {
+    RUNNING,
+    FINISHED_WIN,
+    FINISHED_LOSS
+} Game_state;
+
+typedef struct {
+    Game_mode mode;
+    Game_state state;
+    MinesweeperBoard board;
+} MinesweeperGame;
+
+void init_game(MinesweeperGame *game, Game_mode mode);
 
 void display_board(const MinesweeperBoard *board);
 
+void toggleFlag(MinesweeperGame *game, const int row, const int col);
+void revealField(MinesweeperGame* game, const int row, const int col);
 
 #endif
