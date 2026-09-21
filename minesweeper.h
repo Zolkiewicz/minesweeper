@@ -28,6 +28,8 @@ typedef struct {
 typedef struct {
     int width;
     int height;
+    int empty_fields;
+    int revealed_fields;
     Field grid[MAX_HEIGHT][MAX_WIDTH];
 } MinesweeperBoard;
 

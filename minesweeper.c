@@ -37,24 +37,25 @@ static void place_mines(MinesweeperBoard *board, int mines_count) {
 }
 
 static void init_board(MinesweeperBoard *board, Game_mode game_mode) {
-    
-    int mines_count;
+    board->revealed_fields = 0;
+
+    int mines_count = 0;
     switch (game_mode)
     {
     case EASY:
         board->width = EASY_WIDTH;
         board->height = EASY_HEIGHT;
-        mines_count =  (board->width * board->height * 10 + 99) / 100;
+        mines_count = (board->width * board->height * 10 + 99) / 100;
         break;
     case NORMAL:
         board->width = NORMAL_WIDTH;
         board->height = NORMAL_HEIGHT;
-        mines_count =  (board->width * board->height * 20 + 99) / 100;;
+        mines_count = (board->width * board->height * 20 + 99) / 100;
         break;
     case HARD:
         board->width = HARD_WIDTH;
         board->height = HARD_HEIGHT;
-        mines_count =  (board->width * board->height * 30 + 99) / 100;;
+        mines_count = (board->width * board->height * 30 + 99) / 100;
         break;
     case DEBUG:
         board->width = DEBUG_WIDTH;
@@ -64,14 +65,18 @@ static void init_board(MinesweeperBoard *board, Game_mode game_mode) {
 
         for (int row = 0; row < board->height; row++) {
             for (int col = 0; col < board->width; col++)  {
-                if (row == col || row == 0 || (col == 0 && row % 2 ==0))
+                if (row == col || row == 0 || (col == 0 && row % 2 ==0)) {
                     board->grid[row][col].hasMine = true;
+                    mines_count++;
+                }
             }
         }
+        board->empty_fields = board->width * board->height - mines_count;
         return;
     }
 
     clean_board(board);
+    board->empty_fields = board->width * board->height - mines_count;
     place_mines(board, mines_count);
 }
 
@@ -115,8 +120,13 @@ void revealField(MinesweeperGame* game, const int row, const int col) {
     if (game->board.grid[row][col].isRevealed || game->board.grid[row][col].hasFlag) return;
     
     game->board.grid[row][col].isRevealed = true;
-    if (game->board.grid[row][col].hasMine) game->state = FINISHED_LOSS;
 
+    if (game->board.grid[row][col].hasMine) {
+        game->state = FINISHED_LOSS;
+        return;
+    }
+
+    game->board.revealed_fields++;
     game->board.grid[row][col].mines = countMines(&(game->board), row, col);
 
     if (game->board.grid[row][col].mines == 0) {
@@ -135,6 +145,10 @@ void revealField(MinesweeperGame* game, const int row, const int col) {
             y++;
         }
     }
+    
+    if (game->board.revealed_fields == game->board.empty_fields) 
+        game->state = FINISHED_WIN;
+
 }
 // if row or col is outside board - '#'
 // if the field is not revealed and has a flag - 'F'

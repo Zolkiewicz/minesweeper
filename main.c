@@ -10,13 +10,27 @@ int main (void) {
     MinesweeperGame game;
 
     init_game(&game, DEBUG);
-    display_board(&(game.board));
 
-    revealField(&game, 2, 2);
-    revealField(&game, 7, 3);
-    toggleFlag(&game, 0, 3);
+    char type;
+    int row;
+    int col;
 
-    display_board(&(game.board));
-    
+    while (game.state == RUNNING) {
+        display_board(&(game.board));
+        scanf(" %c %d %d", &type, &row, &col);
+        if (type == 'F') toggleFlag(&game, row, col);
+        if (type == 'R') revealField(&game, row, col);
+    }
+
+    if (game.state == FINISHED_WIN) {
+        printf("\n=============================\n");
+        printf("            VICTORY          \n");
+        printf("=============================\n");
+    } else if (game.state == FINISHED_LOSS) {
+        printf("\n=============================\n");
+        printf("          GAME OVER          \n");
+        printf("=============================\n");
+    }
+        
     return 0;
 }
