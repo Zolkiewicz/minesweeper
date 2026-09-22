@@ -17,17 +17,19 @@ static void clean_board(MinesweeperBoard *board) {
     }
 }
 
-static void place_mines(MinesweeperBoard *board, int mines_count) {
+void place_mines(MinesweeperBoard *board, int mines_count, const int first_move_row, const int first_move_col) {
     if (board->width * board->height < mines_count) {
         printf("Error: mines count exceeds fields count");
-        exit(EXIT_FAILURE);
+        return;
     }
 
     for (int i = 0; i < mines_count; i++) {
         int row = rand() % board->height;
         int col = rand() % board->width;
         
-        if (board->grid[row][col].hasMine == true) {
+        if (board->grid[row][col].hasMine == true ||
+            ((row >= first_move_row - 1 && row <= first_move_row + 1) &&
+            (col >= first_move_col - 1 && col <= first_move_col + 1))) {
             i--;
             continue;
         }
@@ -71,13 +73,14 @@ static void init_board(MinesweeperBoard *board, Game_mode game_mode) {
                 }
             }
         }
+        board->mines_count = mines_count;
         board->empty_fields = board->width * board->height - mines_count;
         return;
     }
 
     clean_board(board);
+    board->mines_count = mines_count;
     board->empty_fields = board->width * board->height - mines_count;
-    place_mines(board, mines_count);
 }
 
 
@@ -150,6 +153,9 @@ void revealField(MinesweeperGame* game, const int row, const int col) {
         game->state = FINISHED_WIN;
 
 }
+
+/*** DISPLAY ***/
+
 // if row or col is outside board - '#'
 // if the field is not revealed and has a flag - 'F'
 // if the field is not revealed and does not have a flag - '_;
@@ -171,7 +177,6 @@ static char getFieldInfo(const MinesweeperBoard *board, const int row, const int
     return board->grid[row][col].mines + '0';
 }
 
-/*** DISPLAY ***/
 
 void display_board(const MinesweeperBoard *board) {
     printf("   ");

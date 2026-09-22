@@ -29,6 +29,7 @@ typedef struct {
     int width;
     int height;
     int empty_fields;
+    int mines_count;
     int revealed_fields;
     Field grid[MAX_HEIGHT][MAX_WIDTH];
 } MinesweeperBoard;
@@ -51,6 +52,8 @@ typedef struct {
     Game_state state;
     MinesweeperBoard board;
 } MinesweeperGame;
+
+void place_mines(MinesweeperBoard *board, int mines_count, const int fisrt_move_row, const int fisrt_move_col);
 
 void init_game(MinesweeperGame *game, Game_mode mode);
 
